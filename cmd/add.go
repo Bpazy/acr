@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"github.com/bpazy/acr/urls"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"log"
+	"path/filepath"
 	"strings"
 )
 
@@ -42,6 +45,7 @@ func addRule() func(cmd *cobra.Command, args []string) {
 	return func(cmd *cobra.Command, args []string) {
 		fmt.Println("add called: " + strings.Join(args, ", "))
 
+		// Extract hostnames from parameters
 		var domains []string
 		for _, arg := range args {
 			ds, err := urls.GetDomainSuffix(arg)
@@ -51,7 +55,17 @@ func addRule() func(cmd *cobra.Command, args []string) {
 			}
 			domains = append(domains, ds)
 		}
+		fmt.Printf("Parsed hostnames: %v\n", domains)
 
-		fmt.Println(domains)
+		// Read Clash for Windows config
+		viper.SetConfigName("config")
+		viper.SetConfigType("yaml")
+		viper.AddConfigPath(filepath.FromSlash("$HOME/.config/clash"))
+		if err := viper.ReadInConfig(); err != nil {
+			log.Fatalf("Read clash for Windows config failed: %v", err)
+		}
+
+		ec := viper.GetString("external-controller")
+		fmt.Println(ec)
 	}
 }
