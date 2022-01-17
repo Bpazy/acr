@@ -7,9 +7,10 @@ package cmd
 import (
 	"fmt"
 	"github.com/bpazy/acr/urls"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"log"
+	"net/http"
 	"path/filepath"
 	"strings"
 )
@@ -43,19 +44,19 @@ func init() {
 
 func addRule() func(cmd *cobra.Command, args []string) {
 	return func(cmd *cobra.Command, args []string) {
-		fmt.Println("add called: " + strings.Join(args, ", "))
+		log.Debugln("Add called: " + strings.Join(args, ", "))
 
 		// Extract hostnames from parameters
 		var domains []string
 		for _, arg := range args {
 			ds, err := urls.GetDomainSuffix(arg)
 			if err != nil {
-				fmt.Printf("%s: %s \n", err.Error(), arg)
+				log.Fatalf("%s: %s", err.Error(), arg)
 				return
 			}
 			domains = append(domains, ds)
 		}
-		fmt.Printf("Parsed hostnames: %v\n", domains)
+		log.Debugf("Parsed hostnames: %v\n", domains)
 
 		// Read Clash for Windows config
 		viper.SetConfigName("config")
@@ -66,6 +67,19 @@ func addRule() func(cmd *cobra.Command, args []string) {
 		}
 
 		ec := viper.GetString("external-controller")
-		fmt.Println(ec)
+		coreUrl := fmt.Sprintf("http://%s/providers/rules/myproxy", ec)
+
+		client := &http.Client{}
+		req, err := http.NewRequest(http.MethodPut, coreUrl, nil)
+		if err != nil {
+			log.Fatalf("Build new request failed: %v", err)
+		}
+		res, err := client.Do(req)
+		if err != nil {
+			log.Fatalf("Request %s failed: %v", coreUrl, err)
+		}
+		defer res.Body.Close()
+
+		log.Debugf("PUT %s response: %+v\n", coreUrl, res)
 	}
 }
