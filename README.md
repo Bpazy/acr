@@ -12,7 +12,7 @@ Download the latest version from [release page](https://github.com/Bpazy/acr/rel
 
 Linux example:
 ```shell
-wget -O /usr/local/bin/acr https://github.com/Bpazy/acr/releases/download/acr-linux-amd64
+wget -O /usr/local/bin/acr https://github.com/Bpazy/acr/releases/latest/download/acr-linux-amd64
 chmod +x /usr/local/bin/acr
 ```
 
