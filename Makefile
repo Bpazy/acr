@@ -1,10 +1,5 @@
 BINDIR=bin
-VERSION=$(shell git describe --tags || echo "unknownversion")
-ifdef NAME
-	FULLNAME=$(NAME)
-else
-	FULLNAME=acr-$@-$(VERSION)
-endif
+FULLNAME=acr-$@
 LDFLAGS="-s -w -X github.com/Bpazy/acr.buildVer=${VERSION}"
 GOBUILD=go build -ldflags=${LDFLAGS}
 CMDPATH=.
