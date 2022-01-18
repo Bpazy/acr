@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -58,28 +59,58 @@ func addRule() func(cmd *cobra.Command, args []string) {
 		}
 		log.Debugf("Parsed hostnames: %v\n", domains)
 
-		// Read Clash for Windows config
-		viper.SetConfigName("config")
-		viper.SetConfigType("yaml")
-		viper.AddConfigPath(filepath.FromSlash("$HOME/.config/clash"))
-		if err := viper.ReadInConfig(); err != nil {
-			log.Fatalf("Read clash for Windows config failed: %v", err)
+		if len(domains) == 0 {
+			return
 		}
 
-		ec := viper.GetString("external-controller")
-		coreUrl := fmt.Sprintf("http://%s/providers/rules/myproxy", ec)
-
-		client := &http.Client{}
-		req, err := http.NewRequest(http.MethodPut, coreUrl, nil)
+		p := getRuleProviderPath()
+		f, err := os.OpenFile(p, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
-			log.Fatalf("Build new request failed: %v", err)
+			log.Fatalf("Open rule file failed: %v", err)
 		}
-		res, err := client.Do(req)
-		if err != nil {
-			log.Fatalf("Request %s failed: %v", coreUrl, err)
+		defer f.Close()
+		for _, domain := range domains {
+			if _, err = f.WriteString("\n  - DOMAIN-SUFFIX," + domain); err != nil {
+				log.Fatalf("Write rule failed: %v", err)
+			}
 		}
-		defer res.Body.Close()
 
-		log.Debugf("PUT %s response: %+v\n", coreUrl, res)
+		coreUrl := readClashCoreUrl()
+		refreshRuleProvider(coreUrl)
 	}
+}
+
+// Acquire rule provider(file) path
+func getRuleProviderPath() string {
+	return "C:\\Users\\hanzi\\.config\\clash\\ruleset\\myproxy.yaml"
+}
+
+func refreshRuleProvider(coreUrl string) {
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodPut, coreUrl, nil)
+	if err != nil {
+		log.Fatalf("Build new request failed: %v", err)
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		log.Fatalf("Request %s failed: %v", coreUrl, err)
+	}
+	defer res.Body.Close()
+
+	log.Debugf("PUT %s response: %+v\n", coreUrl, res)
+}
+
+// Acquire clash core API url
+func readClashCoreUrl() string {
+	main := viper.New()
+	main.SetConfigName("config")
+	main.SetConfigType("yaml")
+	main.AddConfigPath(filepath.FromSlash("$HOME/.config/clash"))
+	if err := main.ReadInConfig(); err != nil {
+		log.Fatalf("Read clash for Windows main config failed: %v", err)
+	}
+
+	ec := main.GetString("external-controller")
+	coreUrl := fmt.Sprintf("http://%s/providers/rules/myproxy", ec)
+	return coreUrl
 }
