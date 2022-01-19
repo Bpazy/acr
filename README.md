@@ -8,7 +8,7 @@
 You have many options.
 
 ### 1. Download release
-Download the latest version from [release page](https://github.com/Bpazy/acr/releases). And put it under the `PATH`.
+Download the latest version from [release page](https://github.com/Bpazy/acr/releases). And put it under the `$PATH`.
 
 Linux example:
 ```shell
