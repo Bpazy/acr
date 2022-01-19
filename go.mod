@@ -1,4 +1,4 @@
-module github.com/bpazy/acr
+module github.com/Bpazy/acr
 
 go 1.16
 
