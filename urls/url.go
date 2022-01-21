@@ -1,19 +1,20 @@
 package urls
 
 import (
-	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"net/url"
 	"strings"
 )
 
 func GetDomainSuffix(arg string) (string, error) {
-	if !strings.HasPrefix(arg, "http://") && !strings.HasPrefix(arg, "https://") {
-		return "", errors.New("Prefix 'https://' or : 'http://' is required")
-	}
+	//if !strings.HasPrefix(arg, "http://") && !strings.HasPrefix(arg, "https://") {
+	//	return "", errors.New("Prefix 'https://' or : 'http://' is required")
+	//}
 
-	u, err := url.Parse(arg)
+	u, err := url.ParseRequestURI(arg)
 	if err != nil {
-		return "", errors.Wrap(err, "my msg")
+		log.Printf("Skip parse uri beause no scahema found")
+		return arg, nil
 	}
 
 	hostname := u.Hostname()

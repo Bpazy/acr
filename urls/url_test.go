@@ -15,8 +15,8 @@ func TestGetDomainSuffix(t *testing.T) {
 		{name: "multi sub domain", arg: "https://www2.www.google.com", want: wantGoogle},
 		{name: "nonstandard port", arg: "https://www2.www.google.com:8080", want: wantGoogle},
 		{name: "path", arg: "https://www2.www.google.com:8080/example/2", want: wantGoogle},
-		{name: "no schema", arg: "www.google.com", wantErr: true},
-		{name: "mistake schema", arg: "httpss://www.google.com", wantErr: true},
+		{name: "no scheme", arg: "www.google.com", want: "www.google.com"},
+		{name: "mistake scheme", arg: "httpss://www.google.com", want: "google.com"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
