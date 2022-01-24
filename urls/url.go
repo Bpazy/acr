@@ -13,7 +13,7 @@ func GetDomainSuffix(arg string) (string, error) {
 
 	u, err := url.ParseRequestURI(arg)
 	if err != nil {
-		log.Printf("Skip parse uri beause no scahema found")
+		log.Debugf("Skip parse uri beause no scahema found")
 		return arg, nil
 	}
 

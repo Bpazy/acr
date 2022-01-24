@@ -1,17 +1,15 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
 	"fmt"
+	"github.com/Bpazy/acr/unique"
 	"github.com/Bpazy/acr/urls"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 )
@@ -48,20 +46,42 @@ func addRule() func(cmd *cobra.Command, args []string) {
 			return
 		}
 
-		p := getRuleProviderPath()
-		f, err := os.OpenFile(p, os.O_APPEND|os.O_WRONLY, 0600)
-		if err != nil {
-			log.Fatalf("Open rule file failed: %v", err)
-		}
-		defer f.Close()
-		for _, domain := range domains {
-			if _, err = f.WriteString("\n  - DOMAIN-SUFFIX," + domain); err != nil {
-				log.Fatalf("Write rule failed: %v", err)
-			}
-		}
+		// append rules to file
+		appendRules(domains)
 
+		// refresh clash core to enable new rules
 		coreUrl := readClashCoreUrl()
 		refreshRuleProvider(coreUrl)
+	}
+}
+
+// append rules to file
+func appendRules(domains []string) {
+	p := getRuleProviderPath()
+
+	b, err := ioutil.ReadFile(p)
+	if err != nil {
+		log.Fatalf("Read rule file failed: %v", err)
+	}
+	var config map[string]*[]string
+	if err := yaml.Unmarshal(b, &config); err != nil {
+		log.Fatalf("Unmarshal rule file failed: %v", err)
+	}
+
+	rules := config["payload"]
+	for _, domain := range domains {
+		*rules = append(*rules, "DOMAIN-SUFFIX,"+domain)
+	}
+
+	// distinct
+	*rules = unique.String(*rules)
+
+	b, err = yaml.Marshal(config)
+	if err != nil {
+		log.Fatalf("Marshal rules failed: %v", err)
+	}
+	if err := ioutil.WriteFile(p, b, 0600); err != nil {
+		log.Fatalf("Write rules failed: %v", err)
 	}
 }
 
