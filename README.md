@@ -7,7 +7,7 @@
 ## Install
 You have many options.
 
-### 1. Download release
+### Download stable release
 Download the latest version from [release page](https://github.com/Bpazy/acr/releases). And put it under the `$PATH`.
 
 Linux example:
@@ -16,7 +16,7 @@ wget -O /usr/local/bin/acr https://github.com/Bpazy/acr/releases/latest/download
 chmod +x /usr/local/bin/acr
 ```
 
-### 2. Install by golang
+### Or install the latest
 Golang version above 1.17
 ```shell
 $ go install github.com/Bpazy/acr@latest
