@@ -181,6 +181,7 @@ func getRuleProviderPath() string {
 	if err := yaml.Unmarshal(b, &cfwProfile); err != nil {
 		log.Fatalf("Unmarshal selected CFW's profile %s failed: %v", file.Time, err)
 	}
+	// TODO
 	r := cfwProfile.RuleProviders["my-proxy"]
 	if filepath.IsAbs(r.Path) {
 		return r.Path
