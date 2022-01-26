@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -93,11 +94,6 @@ func appendRules(domains []string) {
 	}
 }
 
-// Acquire rule provider(file) path
-func getRuleProviderPath() string {
-	return "C:\\Users\\hanzi\\.config\\clash\\ruleset\\myproxy.yaml"
-}
-
 func refreshRuleProvider(coreUrl string) {
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodPut, coreUrl, nil)
@@ -124,6 +120,71 @@ func readClashCoreUrl() string {
 	}
 
 	ec := main.GetString("external-controller")
-	coreUrl := fmt.Sprintf("http://%s/providers/rules/my-proxy", ec)
+	name := "my-proxy"
+	coreUrl := fmt.Sprintf("http://%s/providers/rules/%s", ec, name)
 	return coreUrl
+}
+
+type CfwProfile struct {
+	RuleProviders map[string]CfwRuleProvider `yaml:"rule-providers"`
+}
+
+type CfwRuleProvider struct {
+	Type     string `yaml:"type"`
+	Behavior string `yaml:"behavior"`
+	Path     string `yaml:"path"`
+}
+
+type CfwList struct {
+	Files []CfwListFile `yaml:"files"`
+	Index int           `yaml:"index"`
+}
+
+type CfwListSelect struct {
+	Name string `yaml:"name"`
+	Now  string `yaml:"now"`
+}
+
+type CfwListFile struct {
+	URL      string          `yaml:"url"`
+	Time     string          `yaml:"time"`
+	Name     string          `yaml:"name"`
+	Selected []CfwListSelect `yaml:"selected"`
+	Mode     string          `yaml:"mode"`
+}
+
+// Acquire rule provider(file) path
+func getRuleProviderPath() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	b, err := ioutil.ReadFile(filepath.Join(homeDir, "/.config/clash/profiles/list.yml"))
+	if err != nil {
+		log.Fatalf("Read Clash for Windows list.yml failed: %v", err)
+	}
+	c := CfwList{}
+	if err := yaml.Unmarshal(b, &c); err != nil {
+		log.Fatalf("Unmarshal Clash for Windows list.yml failed: %v", err)
+	}
+	if len(c.Files) <= c.Index {
+		log.Fatalf("Clash for Windows list.yml is empty. Please check your CFW's profiles.")
+	}
+
+	file := c.Files[c.Index]
+	b, err = ioutil.ReadFile(filepath.Join(homeDir, "/.config/clash/profiles/"+file.Time))
+	if err != nil {
+		log.Fatalf("Read selected CFW's profile %s failed: %v", file.Time, err)
+	}
+
+	var cfwProfile CfwProfile
+	if err := yaml.Unmarshal(b, &cfwProfile); err != nil {
+		log.Fatalf("Unmarshal selected CFW's profile %s failed: %v", file.Time, err)
+	}
+	r := cfwProfile.RuleProviders["my-proxy"]
+	if filepath.IsAbs(r.Path) {
+		return r.Path
+	}
+
+	return filepath.Join(homeDir, "/.config/clash", r.Path)
 }
