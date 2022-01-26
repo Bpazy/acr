@@ -124,6 +124,6 @@ func readClashCoreUrl() string {
 	}
 
 	ec := main.GetString("external-controller")
-	coreUrl := fmt.Sprintf("http://%s/providers/rules/myproxy", ec)
+	coreUrl := fmt.Sprintf("http://%s/providers/rules/my-proxy", ec)
 	return coreUrl
 }
