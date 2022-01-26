@@ -1,6 +1,6 @@
 package unique
 
-func String(rules []string) []string {
+func Strings(rules []string) []string {
 	ruleSet := map[string]bool{}
 	var rules2 []string
 	for _, rule := range rules {

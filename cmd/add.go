@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -22,8 +23,12 @@ var addCmd = &cobra.Command{
 	Run:   addRule(),
 }
 
+var sortRules bool
+
 func init() {
 	rootCmd.AddCommand(addCmd)
+
+	addCmd.Flags().BoolVarP(&sortRules, "sort", "", false, "Sort rules")
 }
 
 func addRule() func(cmd *cobra.Command, args []string) {
@@ -74,7 +79,10 @@ func appendRules(domains []string) {
 	}
 
 	// distinct
-	*rules = unique.String(*rules)
+	*rules = unique.Strings(*rules)
+	if sortRules {
+		sort.Strings(*rules)
+	}
 
 	b, err = yaml.Marshal(config)
 	if err != nil {
