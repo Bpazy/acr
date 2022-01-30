@@ -30,6 +30,23 @@ func init() {
 	rootCmd.AddCommand(addCmd)
 
 	addCmd.Flags().BoolVarP(&sortRules, "sort", "", false, "Sort rules")
+
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	folderPath := filepath.Join(userHomeDir(), "/.config/acr")
+	viper.AddConfigPath(folderPath)
+	if err := viper.ReadInConfig(); err != nil {
+		viper.Set("proxy-name", "")
+
+		if err := os.MkdirAll(folderPath, os.ModePerm); err != nil {
+			log.Debugf("mkdir '%s' failed: %v", folderPath, err)
+		}
+		if err := viper.WriteConfigAs(filepath.Join(folderPath, "config.yaml")); err != nil {
+			log.Fatalf("Create acrs's cofig file '~/.config/acr/config.yaml' failed: %v", err)
+		}
+		log.Debugf("Read acr's config failed: %v", err)
+		log.Fatalf("'proxy-name' is empty. Please edit '~/.config/acr/config.yaml'")
+	}
 }
 
 func addRule() func(cmd *cobra.Command, args []string) {
@@ -109,19 +126,28 @@ func refreshRuleProvider(coreUrl string) {
 	log.Debugf("PUT %s response: %+v\n", coreUrl, res)
 }
 
+type CfwConfig struct {
+	MixedPort          int    `yaml:"mixed-port"`
+	AllowLan           bool   `yaml:"allow-lan"`
+	ExternalController string `yaml:"external-controller"`
+	Secret             string `yaml:"secret"`
+	LogLevel           string `yaml:"log-level"`
+}
+
 // Acquire clash core API url
 func readClashCoreUrl() string {
-	main := viper.New()
-	main.SetConfigName("config")
-	main.SetConfigType("yaml")
-	main.AddConfigPath(filepath.FromSlash("$HOME/.config/clash"))
-	if err := main.ReadInConfig(); err != nil {
-		log.Fatalf("Read clash for Windows main config failed: %v", err)
+	p := filepath.Join(userHomeDir(), "/.config/clash/config.yaml")
+	b, err := ioutil.ReadFile(p)
+	if err != nil {
+		log.Fatalf("Read CFW's config file '%s' failed: %v", p, err)
+	}
+	config := CfwConfig{}
+	if err := yaml.Unmarshal(b, &config); err != nil {
+		log.Fatalf("Unmarshal CFW's config file '%s' failed: %v", p, err)
 	}
 
-	ec := main.GetString("external-controller")
-	name := "my-proxy"
-	coreUrl := fmt.Sprintf("http://%s/providers/rules/%s", ec, name)
+	ec := config.ExternalController
+	coreUrl := fmt.Sprintf("http://%s/providers/rules/%s", ec, proxyName())
 	return coreUrl
 }
 
@@ -155,10 +181,7 @@ type CfwListFile struct {
 
 // Acquire rule provider(file) path
 func getRuleProviderPath() string {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		panic(err)
-	}
+	homeDir := userHomeDir()
 	b, err := ioutil.ReadFile(filepath.Join(homeDir, "/.config/clash/profiles/list.yml"))
 	if err != nil {
 		log.Fatalf("Read Clash for Windows list.yml failed: %v", err)
@@ -172,7 +195,8 @@ func getRuleProviderPath() string {
 	}
 
 	file := c.Files[c.Index]
-	b, err = ioutil.ReadFile(filepath.Join(homeDir, "/.config/clash/profiles/"+file.Time))
+	cfwProfilePath := filepath.Join(homeDir, "/.config/clash/profiles/"+file.Time)
+	b, err = ioutil.ReadFile(cfwProfilePath)
 	if err != nil {
 		log.Fatalf("Read selected CFW's profile %s failed: %v", file.Time, err)
 	}
@@ -181,11 +205,29 @@ func getRuleProviderPath() string {
 	if err := yaml.Unmarshal(b, &cfwProfile); err != nil {
 		log.Fatalf("Unmarshal selected CFW's profile %s failed: %v", file.Time, err)
 	}
-	// TODO
-	r := cfwProfile.RuleProviders["my-proxy"]
+	r, ok := cfwProfile.RuleProviders[proxyName()]
+	if !ok {
+		log.Fatalf("'%s' does not exist in %s", proxyName(), cfwProfilePath)
+	}
 	if filepath.IsAbs(r.Path) {
 		return r.Path
 	}
 
 	return filepath.Join(homeDir, "/.config/clash", r.Path)
+}
+
+func userHomeDir() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatalf("Acquire user home dir failed: %v", err)
+	}
+	return homeDir
+}
+
+func proxyName() string {
+	p := viper.GetString("proxy-name")
+	if p == "" {
+		log.Fatalf("'proxy-name' is empty. Please edit ~/.config/acr/config.yaml")
+	}
+	return p
 }
