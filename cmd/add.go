@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/Bpazy/acr/http"
 	"github.com/Bpazy/acr/unique"
 	"github.com/Bpazy/acr/urls"
 	log "github.com/sirupsen/logrus"
@@ -9,11 +11,11 @@ import (
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 )
 
 // addCmd represents the add command
@@ -73,8 +75,8 @@ func addRule() func(cmd *cobra.Command, args []string) {
 		appendRules(domains)
 
 		// refresh clash core to enable new rules
-		coreUrl := readClashCoreUrl()
-		refreshRuleProvider(coreUrl)
+		cfwConfig := readCfwConfig()
+		refreshRuleProvider(&cfwConfig, domains)
 	}
 }
 
@@ -111,19 +113,56 @@ func appendRules(domains []string) {
 	}
 }
 
-func refreshRuleProvider(coreUrl string) {
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodPut, coreUrl, nil)
-	if err != nil {
-		log.Fatalf("Build new request failed: %v", err)
+func refreshRuleProvider(c *CfwConfig, domains []string) {
+	// Refresh rule providers
+	http.Put(c.providersRulesUrl())
+	// Get all connections
+	b := http.Get(c.connectionsUrl())
+	ac := AllConnection{}
+	if err := json.Unmarshal(b, &ac); err != nil {
+		log.Fatalf("Get all CFW's connections failed: %v", err)
 	}
-	res, err := client.Do(req)
-	if err != nil {
-		log.Fatalf("Request %s failed: %v", coreUrl, err)
-	}
-	defer res.Body.Close()
 
-	log.Debugf("PUT %s response: %+v\n", coreUrl, res)
+	// Kill connections which added
+	killConnections(c, domains, ac.Connections)
+}
+
+func killConnections(c *CfwConfig, domains []string, connections []Connections) {
+	for _, addedDomain := range domains {
+		for _, connection := range connections {
+			if strings.HasSuffix(connection.Metadata.Host, addedDomain) {
+				http.Delete(c.connectionUrl(connection.ID))
+			}
+		}
+	}
+}
+
+type AllConnection struct {
+	DownloadTotal int           `json:"downloadTotal"`
+	UploadTotal   int           `json:"uploadTotal"`
+	Connections   []Connections `json:"connections"`
+}
+
+type Connections struct {
+	ID          string    `json:"id"`
+	Metadata    Metadata  `json:"metadata"`
+	Upload      int       `json:"upload"`
+	Download    int       `json:"download"`
+	Start       time.Time `json:"start"`
+	Chains      []string  `json:"chains"`
+	Rule        string    `json:"rule"`
+	RulePayload string    `json:"rulePayload"`
+}
+
+type Metadata struct {
+	Network         string `json:"network"`
+	Type            string `json:"type"`
+	SourceIP        string `json:"sourceIP"`
+	DestinationIP   string `json:"destinationIP"`
+	SourcePort      string `json:"sourcePort"`
+	DestinationPort string `json:"destinationPort"`
+	Host            string `json:"host"`
+	DNSMode         string `json:"dnsMode"`
 }
 
 type CfwConfig struct {
@@ -134,8 +173,23 @@ type CfwConfig struct {
 	LogLevel           string `yaml:"log-level"`
 }
 
-// Acquire clash core API url
-func readClashCoreUrl() string {
+func (c CfwConfig) baseUrl() string {
+	return "http://" + c.ExternalController
+}
+
+func (c CfwConfig) providersRulesUrl() string {
+	return fmt.Sprintf("%s/providers/rules/%s", c.baseUrl(), proxyName())
+}
+
+func (c CfwConfig) connectionsUrl() string {
+	return fmt.Sprintf("%s/connections", c.baseUrl())
+}
+
+func (c CfwConfig) connectionUrl(connectionId string) string {
+	return fmt.Sprintf("%s/connections/%s", c.baseUrl(), connectionId)
+}
+
+func readCfwConfig() CfwConfig {
 	p := filepath.Join(userHomeDir(), "/.config/clash/config.yaml")
 	b, err := ioutil.ReadFile(p)
 	if err != nil {
@@ -145,10 +199,7 @@ func readClashCoreUrl() string {
 	if err := yaml.Unmarshal(b, &config); err != nil {
 		log.Fatalf("Unmarshal CFW's config file '%s' failed: %v", p, err)
 	}
-
-	ec := config.ExternalController
-	coreUrl := fmt.Sprintf("http://%s/providers/rules/%s", ec, proxyName())
-	return coreUrl
+	return config
 }
 
 type CfwProfile struct {
