@@ -1,10 +1,13 @@
 English | [简体中文](./README-zh_CN.md)
+<h1 align="center">acr</h1>
 
-# acr
+<div align="center">
+
 ![Build](https://github.com/Bpazy/acr/workflows/Build/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Bpazy_acr&metric=alert_status)](https://sonarcloud.io/dashboard?id=Bpazy_acr)
 
 `acr` Means add clash rule
+</div>
 
 ## Install
 You have many options.
