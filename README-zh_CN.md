@@ -1,10 +1,13 @@
 [English](./README.md) | 简体中文
+<h1 align="center">acr</h1>
 
-# acr
+<div align="center">
+
 ![Build](https://github.com/Bpazy/acr/workflows/Build/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Bpazy_acr&metric=alert_status)](https://sonarcloud.io/dashboard?id=Bpazy_acr)
 
 `acr` 意思是添加 Clash 规则。
+</div>
 
 ## Install
 你有很多种选择：
