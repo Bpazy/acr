@@ -38,6 +38,7 @@ func init() {
 	folderPath := filepath.Join(userHomeDir(), "/.config/acr")
 	viper.AddConfigPath(folderPath)
 	if err := viper.ReadInConfig(); err != nil {
+		log.Debugf("Read acr's config failed: %v", err)
 		viper.Set("proxy-name", "")
 
 		if err := os.MkdirAll(folderPath, os.ModePerm); err != nil {
@@ -46,7 +47,6 @@ func init() {
 		if err := viper.WriteConfigAs(filepath.Join(folderPath, "config.yaml")); err != nil {
 			log.Fatalf("Create acrs's cofig file '~/.config/acr/config.yaml' failed: %v", err)
 		}
-		log.Debugf("Read acr's config failed: %v", err)
 		log.Fatalf("'proxy-name' is empty. Please edit '~/.config/acr/config.yaml'")
 	}
 }
