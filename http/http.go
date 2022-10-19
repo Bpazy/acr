@@ -6,18 +6,20 @@ import (
 	"net/http"
 )
 
-func Put(url string) []byte {
-	req := buildRequest(http.MethodPut, url, nil)
+type Headers map[string]string
+
+func Put(url string, h Headers) []byte {
+	req := buildRequest(http.MethodPut, url, nil, h)
 	return Do(req)
 }
 
-func Get(url string) []byte {
-	req := buildRequest(http.MethodGet, url, nil)
+func Get(url string, h Headers) []byte {
+	req := buildRequest(http.MethodGet, url, nil, h)
 	return Do(req)
 }
 
-func Delete(url string) []byte {
-	req := buildRequest(http.MethodDelete, url, nil)
+func Delete(url string, h Headers) []byte {
+	req := buildRequest(http.MethodDelete, url, nil, h)
 	return Do(req)
 }
 
@@ -28,7 +30,7 @@ func Do(req *http.Request) []byte {
 		log.Fatalf("Request %s failed: %v", req.URL, err)
 	}
 	defer res.Body.Close()
-	log.Debugf("PUT %s response: %+v\n", req.URL, res)
+	log.Debugf("Do request to %s, response: %+v\n", req.URL, res)
 
 	b, err := io.ReadAll(res.Body)
 	if err != nil {
@@ -38,10 +40,15 @@ func Do(req *http.Request) []byte {
 	return b
 }
 
-func buildRequest(method, url string, body io.Reader) *http.Request {
+func buildRequest(method, url string, body io.Reader, headers Headers) *http.Request {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		log.Fatalf("Build new request failed: %v", err)
+	}
+	if headers != nil {
+		for k, v := range headers {
+			req.Header.Add(k, v)
+		}
 	}
 	return req
 }

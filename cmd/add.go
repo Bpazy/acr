@@ -52,31 +52,32 @@ func init() {
 
 func addRule() func(cmd *cobra.Command, args []string) {
 	return func(cmd *cobra.Command, args []string) {
-		log.Debugln("Add called: " + strings.Join(args, ", "))
-
-		// Extract hostnames from parameters
-		var domains []string
-		for _, arg := range args {
-			ds, err := urls.GetDomainSuffix(arg)
-			if err != nil {
-				log.Fatalf("%s: %s", err.Error(), arg)
-				return
-			}
-			domains = append(domains, ds)
-		}
-		log.Debugf("Parsed hostnames: %v\n", domains)
-
-		if len(domains) == 0 {
+		domains, ok := parseDomains(args)
+		if !ok || len(domains) == 0 {
 			return
 		}
-
 		// append rules to file
 		appendRules(domains)
-
 		// refresh clash core to enable new rules
-		cfwConfig := readCfwConfig()
-		refreshRuleProvider(&cfwConfig, domains)
+		refreshRuleProvider(domains)
 	}
+}
+
+func parseDomains(args []string) ([]string, bool) {
+	log.Debugln("Add called: " + strings.Join(args, ", "))
+
+	// Extract hostnames from parameters
+	var domains []string
+	for _, arg := range args {
+		ds, err := urls.GetDomainSuffix(arg)
+		if err != nil {
+			log.Fatalf("%s: %s", err.Error(), arg)
+			return nil, false
+		}
+		domains = append(domains, ds)
+	}
+	log.Debugf("Parsed hostnames: %v\n", domains)
+	return domains, true
 }
 
 // append rules to file
@@ -112,25 +113,29 @@ func appendRules(domains []string) {
 	}
 }
 
-func refreshRuleProvider(c *CfwConfig, domains []string) {
+func refreshRuleProvider(domains []string) {
+	c := readCfwConfig()
 	// Refresh rule providers
-	http.Put(c.providersRulesUrl())
+	log.Debugf("Refreshing rule provider: %s\n", c.providersRulesUrl())
+	http.Put(c.providersRulesUrl(), c.headers())
 	// Get all connections
-	b := http.Get(c.connectionsUrl())
+	log.Debugf("Getting connections: %s\n", c.connectionsUrl())
+	b := http.Get(c.connectionsUrl(), c.headers())
 	ac := AllConnection{}
 	if err := json.Unmarshal(b, &ac); err != nil {
 		log.Fatalf("Get all CFW's connections failed: %v", err)
 	}
 
 	// Kill connections which added
-	killConnections(c, domains, ac.Connections)
+	killConnections(&c, domains, ac.Connections)
 }
 
 func killConnections(c *CfwConfig, domains []string, connections []Connections) {
 	for _, addedDomain := range domains {
 		for _, connection := range connections {
 			if strings.HasSuffix(connection.Metadata.Host, addedDomain) {
-				http.Delete(c.connectionUrl(connection.ID))
+				log.Debugf("Killing connection: %s\n", c.connectionUrl(connection.ID))
+				http.Delete(c.connectionUrl(connection.ID), c.headers())
 			}
 		}
 	}
@@ -186,6 +191,14 @@ func (c CfwConfig) connectionsUrl() string {
 
 func (c CfwConfig) connectionUrl(connectionId string) string {
 	return fmt.Sprintf("%s/connections/%s", c.baseUrl(), connectionId)
+}
+
+func (c CfwConfig) headers() http.Headers {
+	h := http.Headers{}
+	if c.Secret != "" {
+		h["Authorization"] = "Bearer " + c.Secret
+	}
+	return h
 }
 
 func readCfwConfig() CfwConfig {
