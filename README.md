@@ -23,7 +23,7 @@ chmod +x /usr/local/bin/acr
 ```
 
 ### Or install the latest
-Golang version above 1.17
+Golang version above 1.19
 ```shell
 $ go install github.com/Bpazy/acr@latest
 ```
