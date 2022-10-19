@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -84,7 +83,7 @@ func addRule() func(cmd *cobra.Command, args []string) {
 func appendRules(domains []string) {
 	p := getRuleProviderPath()
 
-	b, err := ioutil.ReadFile(p)
+	b, err := os.ReadFile(p)
 	if err != nil {
 		log.Fatalf("Read rule file failed: %v", err)
 	}
@@ -108,7 +107,7 @@ func appendRules(domains []string) {
 	if err != nil {
 		log.Fatalf("Marshal rules failed: %v", err)
 	}
-	if err := ioutil.WriteFile(p, b, 0600); err != nil {
+	if err := os.WriteFile(p, b, 0600); err != nil {
 		log.Fatalf("Write rules failed: %v", err)
 	}
 }
@@ -191,7 +190,7 @@ func (c CfwConfig) connectionUrl(connectionId string) string {
 
 func readCfwConfig() CfwConfig {
 	p := filepath.Join(userHomeDir(), "/.config/clash/config.yaml")
-	b, err := ioutil.ReadFile(p)
+	b, err := os.ReadFile(p)
 	if err != nil {
 		log.Fatalf("Read CFW's config file '%s' failed: %v", p, err)
 	}
@@ -233,7 +232,7 @@ type CfwListFile struct {
 // Acquire rule provider(file) path
 func getRuleProviderPath() string {
 	homeDir := userHomeDir()
-	b, err := ioutil.ReadFile(filepath.Join(homeDir, "/.config/clash/profiles/list.yml"))
+	b, err := os.ReadFile(filepath.Join(homeDir, "/.config/clash/profiles/list.yml"))
 	if err != nil {
 		log.Fatalf("Read Clash for Windows list.yml failed: %v", err)
 	}
@@ -247,7 +246,7 @@ func getRuleProviderPath() string {
 
 	file := c.Files[c.Index]
 	cfwProfilePath := filepath.Join(homeDir, "/.config/clash/profiles/"+file.Time)
-	b, err = ioutil.ReadFile(cfwProfilePath)
+	b, err = os.ReadFile(cfwProfilePath)
 	if err != nil {
 		log.Fatalf("Read selected CFW's profile %s failed: %v", file.Time, err)
 	}
