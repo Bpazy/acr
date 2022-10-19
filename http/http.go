@@ -3,7 +3,6 @@ package http
 import (
 	log "github.com/sirupsen/logrus"
 	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -31,7 +30,7 @@ func Do(req *http.Request) []byte {
 	defer res.Body.Close()
 	log.Debugf("PUT %s response: %+v\n", req.URL, res)
 
-	b, err := ioutil.ReadAll(res.Body)
+	b, err := io.ReadAll(res.Body)
 	if err != nil {
 		log.Fatalf("Read %s's response failed: %v", req.URL, err)
 	}
