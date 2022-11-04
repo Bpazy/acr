@@ -1,14 +1,9 @@
 English | [简体中文](./README-zh_CN.md)
-<h1 align="center">acr</h1>
-
-<div align="center">
-
+# acr
 ![Build](https://github.com/Bpazy/acr/workflows/Build/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Bpazy_acr&metric=alert_status)](https://sonarcloud.io/dashboard?id=Bpazy_acr)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Bpazy/acr)](https://goreportcard.com/report/github.com/Bpazy/acr)
 ![LICENSE](https://img.shields.io/github/license/Bpazy/acr)
-
-</div>
 
 ## Introduce
 `acr` helps to add Clash rules and takes effect right away.
