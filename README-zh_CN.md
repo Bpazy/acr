@@ -1,13 +1,10 @@
 [English](./README.md) | 简体中文
-<h1 align="center">acr</h1>
-
-<div align="center">
+# acr
 
 ![Build](https://github.com/Bpazy/acr/workflows/Build/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Bpazy_acr&metric=alert_status)](https://sonarcloud.io/dashboard?id=Bpazy_acr)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Bpazy/acr)](https://goreportcard.com/report/github.com/Bpazy/acr)
-
-</div>
+![LICENSE](https://img.shields.io/github/license/Bpazy/acr)
 
 ## 介绍
 `acr` 的作用是添加 Clash 规则，并使该规则立刻生效。
