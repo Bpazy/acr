@@ -16,7 +16,7 @@
   - DOMAIN-SUFFIX,google.com
   - DOMAIN-SUFFIX,youtube.com
 ```
-3. 接着会调用 CFW 的 API 来重载 clash 核心使上面的规则生效。
+3. 接着会调用 CFW 内置的 clash 核心的 API 重载，使上面的规则生效。
 
 ## 安装
 你有很多种选择：
