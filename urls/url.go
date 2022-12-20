@@ -7,10 +7,6 @@ import (
 )
 
 func GetDomainSuffix(arg string) (string, error) {
-	//if !strings.HasPrefix(arg, "http://") && !strings.HasPrefix(arg, "https://") {
-	//	return "", errors.New("Prefix 'https://' or : 'http://' is required")
-	//}
-
 	u, err := url.ParseRequestURI(arg)
 	if err != nil {
 		log.Debugf("Skip parse uri beause no scahema found")
