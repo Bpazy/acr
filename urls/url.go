@@ -17,6 +17,9 @@ func GetDomainSuffix(arg string) (string, error) {
 	if hostname != "" {
 		split := strings.Split(hostname, ".")
 		domainSuffix := strings.Join(split[len(split)-2:], ".")
+		if domainSuffix == "com.cn" {
+			return strings.Join(split[len(split)-3:], "."), nil
+		}
 		return domainSuffix, nil
 	}
 
