@@ -30,7 +30,7 @@ var sortRules bool
 func init() {
 	rootCmd.AddCommand(addCmd)
 
-	addCmd.Flags().BoolVarP(&sortRules, "sort", "", false, "Sort rules")
+	addCmd.Flags().BoolVarP(&sortRules, "sort", "", true, "Sort rules")
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
