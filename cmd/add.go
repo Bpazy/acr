@@ -25,12 +25,16 @@ var addCmd = &cobra.Command{
 	Run:   addRule(),
 }
 
-var sortRules bool
+var (
+	sortRules bool
+	killAll   bool
+)
 
 func init() {
 	rootCmd.AddCommand(addCmd)
 
 	addCmd.Flags().BoolVarP(&sortRules, "sort", "", true, "Sort rules")
+	addCmd.Flags().BoolVarP(&killAll, "all", "", false, "Kill all connections after append rules")
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
@@ -131,6 +135,14 @@ func refreshRuleProvider(domains []string) {
 }
 
 func killConnections(c *CfwConfig, domains []string, connections []Connections) {
+	if killAll {
+		log.Debugf("Killing all connections")
+		for _, connection := range connections {
+			log.Debugf("Killing connection: %s\n", c.connectionUrl(connection.ID))
+			http.Delete(c.connectionUrl(connection.ID), c.headers())
+		}
+		return
+	}
 	for _, addedDomain := range domains {
 		for _, connection := range connections {
 			if strings.HasSuffix(connection.Metadata.Host, addedDomain) {
