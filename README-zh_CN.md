@@ -30,7 +30,7 @@ wget -O /usr/local/bin/acr https://github.com/Bpazy/acr/releases/latest/download
 chmod +x /usr/local/bin/acr
 ```
 
-### 或者使用使用Go来安装
+### 或者使用Go来安装
 Golang 的版本需要大于等于 1.19
 ```shell
 $ go install github.com/Bpazy/acr@latest
